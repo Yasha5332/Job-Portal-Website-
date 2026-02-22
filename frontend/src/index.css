@@ -1,0 +1,54 @@
+@import "tailwindcss";
+
+/* ── Global Typography ─────────────────────────────────────────── */
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    font-size: 15px;
+    line-height: 1.6;
+    color: #0f172a;
+    background-color: #f8fafc;
+    letter-spacing: -0.01em;
+}
+
+/* Headings get tighter tracking by default */
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+    font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+    font-weight: 700;
+    line-height: 1.2;
+    letter-spacing: -0.03em;
+    color: #0f172a;
+}
+
+/* Label / caption text */
+label,
+caption {
+    font-weight: 600;
+    letter-spacing: -0.005em;
+}
+
+/* Buttons inherit font */
+button,
+input,
+select,
+textarea {
+    font-family: inherit;
+    letter-spacing: -0.01em;
+}
+
+/* Prevent layout shift on font load */
+html {
+    font-display: swap;
+}
