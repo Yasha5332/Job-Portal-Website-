@@ -27,7 +27,13 @@ export default function Login() {
       auth.login(data.token, data.role, data.user);
 
       // Redirect based on role
-      navigate(data.role === 'employer' ? '/employeeDashboard' : '/');
+      if (data.role === 'admin') {
+        navigate('/admin/dashboard');
+      } else if (data.role === 'employer') {
+        navigate('/employeeDashboard');
+      } else {
+        navigate('/');
+      }
 
     } catch (err) {
       const msg = err.response?.data?.message;

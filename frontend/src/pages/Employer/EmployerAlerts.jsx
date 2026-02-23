@@ -1,7 +1,8 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useAuth } from '../../context/AuthContext';
+import { useNotifications } from '../../context/NotificationContext';
 import toast, { Toaster } from 'react-hot-toast';
 import axios from 'axios';
+import { useState,useRef,useCallback,useEffect } from 'react';
 
 const BASE_URL = 'http://localhost:5000';
 
@@ -20,6 +21,7 @@ function timeAgo(dateStr) {
 
 export default function EmployerAlerts() {
   const { token } = useAuth();
+  const { refreshUnreadCount } = useNotifications();
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -75,6 +77,7 @@ export default function EmployerAlerts() {
       });
 
       setNotifications(prev => [response.data.notification, ...prev]);
+      refreshUnreadCount();
       toast.success('Test notification sent!');
     } catch (err) {
       toast.error(err.response?.data?.message || err.message);
@@ -87,6 +90,7 @@ export default function EmployerAlerts() {
         headers: { Authorization: `Bearer ${token}` },
       });
       setNotifications(prev => prev.map(n => ({ ...n, is_read: true })));
+      refreshUnreadCount();
       toast.success('All marked as read');
     } catch (err) {
       toast.error(err.response?.data?.message || err.message);
@@ -99,6 +103,7 @@ export default function EmployerAlerts() {
         headers: { Authorization: `Bearer ${token}` },
       });
       setNotifications(prev => prev.map(n => n._id === id ? { ...n, is_read: true } : n));
+      refreshUnreadCount();
     } catch (err) {
       console.error(err.response?.data?.message || err.message);
     }
@@ -112,6 +117,7 @@ export default function EmployerAlerts() {
         headers: { Authorization: `Bearer ${token}` },
       });
       setNotifications(prev => prev.filter(n => n._id !== id));
+      refreshUnreadCount();
       toast.success('Notification dismissed');
     } catch (err) {
       toast.error(err.response?.data?.message || err.message);

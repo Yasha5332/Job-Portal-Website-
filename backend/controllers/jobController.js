@@ -1,6 +1,7 @@
 const Job = require('../models/Job');
 const Employer = require('../models/Employer');
 const Application = require('../models/Application');
+const ActivityLog = require('../models/ActivityLog');
 
 // ─── GET ALL ACTIVE JOBS (public) ─────────────────────────────────────────────
 // GET /api/jobs  – supports ?keyword=&location=&category= query params
@@ -56,7 +57,7 @@ exports.createJob = async (req, res) => {
       return res.status(404).json({ message: 'Employer profile not found.' });
     }
 
-    const { title, description, category, location, salary_range, working_hours } = req.body;
+    const { title, description, category, location, salary_range, working_hours, status } = req.body;
 
     const job = await new Job({
       employer: employer._id,
@@ -66,7 +67,14 @@ exports.createJob = async (req, res) => {
       location,
       salary_range: salary_range || '',
       working_hours: working_hours || '',
-      status: 'active',
+      status: status || 'active',
+    }).save();
+
+    await new ActivityLog({
+      action: 'Job Posted',
+      user: employer.company_name,
+      details: title,
+      type: 'job_post'
     }).save();
 
     res.status(201).json({ message: 'Job posted successfully!', job });

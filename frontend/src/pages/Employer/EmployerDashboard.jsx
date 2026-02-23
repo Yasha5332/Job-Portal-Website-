@@ -47,15 +47,22 @@ function PostJobModal({ token, onClose, onSuccess }) {
 
   const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const handleSubmit = async (e, status = 'active') => {
+    if (e) e.preventDefault();
+
+    // Basic validation
+    if (!form.title || !form.category || !form.location || !form.description) {
+      setError('Please fill in all required fields.');
+      return;
+    }
+
     setLoading(true);
     setError('');
     try {
       const res = await fetch(`${BASE_URL}/api/jobs`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify(form),
+        body: JSON.stringify({ ...form, status }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.message || 'Failed to post job.');
@@ -70,7 +77,7 @@ function PostJobModal({ token, onClose, onSuccess }) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg p-8 relative animate-fade-in">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg p-8 relative animate-fade-in max-h-[90vh] overflow-y-auto">
         <button onClick={onClose} className="absolute top-5 right-5 text-slate-400 hover:text-slate-600 transition-colors text-2xl leading-none">&times;</button>
         <h2 className="text-2xl font-extrabold text-slate-900 mb-1">Post a New Job</h2>
         <p className="text-sm text-slate-400 mb-6">Fill in the details below to publish a new job posting.</p>
@@ -79,7 +86,7 @@ function PostJobModal({ token, onClose, onSuccess }) {
           <div className="mb-4 px-4 py-3 bg-red-50 border border-red-200 text-red-700 text-sm rounded-xl">{error}</div>
         )}
 
-        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+        <div className="flex flex-col gap-4">
           {[
             { name: 'title', label: 'Job Title', placeholder: 'e.g. Weekend Barista' },
             { name: 'category', label: 'Category', placeholder: 'e.g. Food & Beverage' },
@@ -95,7 +102,6 @@ function PostJobModal({ token, onClose, onSuccess }) {
                 value={form[field.name]}
                 onChange={handleChange}
                 placeholder={field.placeholder}
-                required={field.name === 'title' || field.name === 'category' || field.name === 'location'}
                 className="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-sm text-slate-900 placeholder-slate-300 outline-none focus:ring-2 focus:ring-indigo-300 focus:border-indigo-400 transition"
               />
             </div>
@@ -107,19 +113,28 @@ function PostJobModal({ token, onClose, onSuccess }) {
               value={form.description}
               onChange={handleChange}
               placeholder="Describe the role, responsibilities, and requirements..."
-              required
               rows={4}
               className="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-sm text-slate-900 placeholder-slate-300 outline-none focus:ring-2 focus:ring-indigo-300 focus:border-indigo-400 transition resize-none"
             />
           </div>
-          <button
-            type="submit"
-            disabled={loading}
-            className="mt-2 w-full py-3 bg-indigo-600 text-white font-bold rounded-xl hover:bg-indigo-700 transition disabled:opacity-60"
-          >
-            {loading ? 'Posting…' : 'Post Job'}
-          </button>
-        </form>
+
+          <div className="flex gap-3 mt-4">
+            <button
+              onClick={() => handleSubmit(null, 'active')}
+              disabled={loading}
+              className="flex-1 py-3 bg-indigo-600 text-white font-bold rounded-xl hover:bg-indigo-700 transition disabled:opacity-60 active:scale-95 shadow-lg shadow-indigo-100"
+            >
+              {loading ? 'Posting…' : 'Post Job'}
+            </button>
+            <button
+              onClick={() => handleSubmit(null, 'draft')}
+              disabled={loading}
+              className="flex-1 py-3 bg-white border border-slate-200 text-slate-600 font-bold rounded-xl hover:bg-slate-50 transition disabled:opacity-60 active:scale-95"
+            >
+              Save as Draft
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -320,9 +335,11 @@ export default function EmployerDashboard() {
                       </td>
                       <td className="px-6 py-5">
                         <span className={`px-3 py-1.5 rounded-full text-[11px] font-bold tracking-wide capitalize ${job.status === 'active'
-                            ? 'bg-emerald-100 text-emerald-700'
-                            : job.status === 'closed'
-                              ? 'bg-red-100 text-red-500'
+                          ? 'bg-emerald-100 text-emerald-700'
+                          : job.status === 'closed'
+                            ? 'bg-red-100 text-red-500'
+                            : job.status === 'draft'
+                              ? 'bg-amber-100 text-amber-700'
                               : 'bg-slate-100 text-slate-500'
                           }`}>
                           {job.status}
@@ -387,9 +404,9 @@ export default function EmployerDashboard() {
                           value={app.status}
                           onChange={(e) => handleStatusChange(app._id, e.target.value)}
                           className={`w-full text-xs font-bold border-none rounded-lg px-3 py-2 outline-none cursor-pointer appearance-none ${app.status === 'Accepted' ? 'bg-emerald-50 text-emerald-700' :
-                              app.status === 'Rejected' ? 'bg-red-50 text-red-700' :
-                                app.status === 'Reviewed' ? 'bg-indigo-50 text-indigo-700' :
-                                  'bg-amber-50 text-amber-700'
+                            app.status === 'Rejected' ? 'bg-red-50 text-red-700' :
+                              app.status === 'Reviewed' ? 'bg-indigo-50 text-indigo-700' :
+                                'bg-amber-50 text-amber-700'
                             }`}
                         >
                           <option value="Pending">⏳ Pending</option>

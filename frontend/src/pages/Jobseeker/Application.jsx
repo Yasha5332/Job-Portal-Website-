@@ -345,29 +345,16 @@ export default function Applications() {
                   </div>
 
                   {/* Actions */}
-                  <div className="p-5 bg-white flex gap-3 mt-auto">
-                    {app.status === 'Accepted' && (
-                      <>
-                        <button className="flex-1 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-sm rounded-lg transition-colors">🎉 View Offer</button>
-                        <button className="flex-1 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-semibold text-sm rounded-lg transition-colors">💬 Message HR</button>
-                      </>
-                    )}
-                    {app.status === 'Reviewed' && (
-                      <>
-                        <button className="flex-1 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-semibold text-sm rounded-lg transition-colors">💬 Follow Up</button>
-                      </>
-                    )}
-                    {app.status === 'Pending' && (
-                      <>
+                  {(app.status === 'Pending' || app.status === 'Rejected') && (
+                    <div className="p-5 bg-white flex gap-3 mt-auto">
+                      {app.status === 'Pending' && (
                         <button onClick={() => handleWithdraw(app._id)} className="flex-1 py-2 bg-red-50 hover:bg-red-100 text-red-600 font-semibold text-sm rounded-lg transition-colors">✕ Withdraw</button>
-                      </>
-                    )}
-                    {app.status === 'Rejected' && (
-                      <>
+                      )}
+                      {app.status === 'Rejected' && (
                         <a href="/jobs" className="flex-1 py-2 text-center bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-sm rounded-lg transition-colors">🔍 Find Similar</a>
-                      </>
-                    )}
-                  </div>
+                      )}
+                    </div>
+                  )}
                 </div>
               );
             }) : (

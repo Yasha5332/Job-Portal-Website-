@@ -2,6 +2,7 @@ const User = require('../models/User');
 const JobSeeker = require('../models/JobSeeker');
 const Employer = require('../models/Employer');
 const Admin = require('../models/Admin');
+const ActivityLog = require('../models/ActivityLog');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 
@@ -62,8 +63,25 @@ exports.register = async (req, res) => {
         phone_number: emp.phone_number,
       };
     } else if (role === 'admin') {
-      await new Admin({ user: savedUser._id, username }).save();
+      const adm = await new Admin({
+        user: savedUser._id,
+        username,
+        full_name: req.body.full_name || '',
+        phone_number: req.body.phone_number || '',
+      }).save();
+      profile = {
+        username: adm.username,
+        full_name: adm.full_name,
+        phone_number: adm.phone_number,
+      };
     }
+
+    // 4.5 Log activity
+    await new ActivityLog({
+      action: role === 'job_seeker' ? 'New Job Seeker Registered' : role === 'employer' ? 'New Employer Registered' : 'New Admin Registered',
+      user: full_name || company_name || username || email,
+      type: 'registration'
+    }).save();
 
     // 5. Issue JWT and return user object
     const token = signToken(savedUser);
@@ -114,6 +132,13 @@ exports.login = async (req, res) => {
       if (emp) profile = {
         company_name: emp.company_name,
         phone_number: emp.phone_number,
+      };
+    } else if (user.role === 'admin') {
+      const adm = await Admin.findOne({ user: user._id });
+      if (adm) profile = {
+        username: adm.username,
+        full_name: adm.full_name,
+        phone_number: adm.phone_number,
       };
     }
 

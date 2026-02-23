@@ -12,6 +12,7 @@ const AuthContext = createContext(null);
 const normaliseRole = (backendRole) => {
     if (backendRole === 'job_seeker') return 'jobseeker';
     if (backendRole === 'employer') return 'employer';
+    if (backendRole === 'admin') return 'admin';
     return 'visitor';
 };
 

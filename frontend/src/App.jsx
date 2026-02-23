@@ -16,8 +16,13 @@ import EmployerCandidates from './pages/Employer/EmployerCandidates'
 import EmployerMessages from './pages/Employer/EmployerMessages'
 import JobDetail from './pages/Jobseeker/Details'
 import EmployerAlerts from './pages/Employer/EmployerAlerts'
+import AdminDashboard from './pages/Admin/AdminDashboard'
+import AdminJobs from './pages/Admin/AdminJobs'
+import AdminSignup from './pages/AdminSignup'
+import AdminUsers from './pages/Admin/AdminUsers'
+
 // Pages listed here will NOT show the Navbar or Footer
-const noNavbarRoutes = ['/login', '/signup']
+const noNavbarRoutes = ['/login', '/signup', '/admin/signup']
 
 function App() {
   const location = useLocation()
@@ -42,6 +47,14 @@ function App() {
           <Route path="/employerCandidates" element={<EmployerCandidates />} />
           <Route path="/employerMessages" element={<EmployerMessages />} />
           <Route path="/job/:id" element={<JobDetail />} />
+          <Route path="/admin/signup" element={<AdminSignup />} />
+
+          {/* Admin Routes */}
+          <Route path="/admin/dashboard" element={<AdminDashboard />} />
+          <Route path="/admin/users" element={<AdminUsers />} />
+          <Route path="/admin/jobs" element={<AdminJobs />} />
+          <Route path="/admin/settings" element={<AdminDashboard />} /> { /* Placeholder */}
+          <Route path="/admin/notifications" element={<AdminDashboard />} /> { /* Placeholder */}
         </Routes>
       </main>
       {showNavbar && <Footer />}

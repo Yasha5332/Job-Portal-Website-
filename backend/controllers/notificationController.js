@@ -85,3 +85,13 @@ exports.dismissNotification = async (req, res) => {
         res.status(500).json({ error: error.message });
     }
 };
+// ─── GET UNREAD COUNT ────────────────────────────────────────────────────────
+// GET /api/notifications/unread-count  (protected)
+exports.getUnreadCount = async (req, res) => {
+    try {
+        const count = await Notification.countDocuments({ user: req.userId, is_read: false });
+        res.status(200).json({ count });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+};

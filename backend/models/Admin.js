@@ -10,6 +10,14 @@ const adminSchema = new mongoose.Schema({
   username: {
     type: String,
     required: true
+  },
+  full_name: {
+    type: String,
+    required: true
+  },
+  phone_number: {
+    type: String,
+    required: true
   }
 }, { timestamps: true });
 

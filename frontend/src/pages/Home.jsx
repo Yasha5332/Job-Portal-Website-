@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 
 export default function Home() {
   return (
@@ -50,19 +51,19 @@ export default function Home() {
                   className="w-full ml-3 bg-transparent outline-none text-slate-900 placeholder-slate-500"
                 />
               </div>
-              <button className="w-full md:w-auto mt-2 md:mt-0 px-8 py-3 bg-indigo-600 hover:bg-indigo-700 transition-colors text-white font-semibold rounded-full md:rounded-full">
+              <Link to="/jobs" className="w-full md:w-auto mt-2 md:mt-0 px-8 py-3 bg-indigo-600 hover:bg-indigo-700 transition-colors text-white font-semibold rounded-full md:rounded-full">
                 Search Jobs
-              </button>
+              </Link>
             </div>
 
             {/* Popular categories pills */}
             <div className="flex flex-wrap items-center justify-center gap-3 mt-10 text-sm">
               <span className="font-medium text-slate-500">Popular:</span>
-              <a href="#" className="px-4 py-1.5 bg-white border border-slate-200 rounded-full text-slate-600 hover:text-indigo-600 hover:border-indigo-600 transition-colors shadow-sm">🛍️ Retail</a>
-              <a href="#" className="px-4 py-1.5 bg-white border border-slate-200 rounded-full text-slate-600 hover:text-indigo-600 hover:border-indigo-600 transition-colors shadow-sm">🍔 Food & Bev</a>
-              <a href="#" className="px-4 py-1.5 bg-white border border-slate-200 rounded-full text-slate-600 hover:text-indigo-600 hover:border-indigo-600 transition-colors shadow-sm">💻 IT & Tech</a>
-              <a href="#" className="px-4 py-1.5 bg-white border border-slate-200 rounded-full text-slate-600 hover:text-indigo-600 hover:border-indigo-600 transition-colors shadow-sm">🎧 Customer Service</a>
-              <a href="#" className="px-4 py-1.5 bg-white border border-slate-200 rounded-full text-slate-600 hover:text-indigo-600 hover:border-indigo-600 transition-colors shadow-sm">🎨 Creative</a>
+              <Link to="/jobs" className="px-4 py-1.5 bg-white border border-slate-200 rounded-full text-slate-600 hover:text-indigo-600 hover:border-indigo-600 transition-colors shadow-sm">🛍️ Retail</Link>
+              <Link to="/jobs" className="px-4 py-1.5 bg-white border border-slate-200 rounded-full text-slate-600 hover:text-indigo-600 hover:border-indigo-600 transition-colors shadow-sm">🍔 Food & Bev</Link>
+              <Link to="/jobs" className="px-4 py-1.5 bg-white border border-slate-200 rounded-full text-slate-600 hover:text-indigo-600 hover:border-indigo-600 transition-colors shadow-sm">💻 IT & Tech</Link>
+              <Link to="/jobs" className="px-4 py-1.5 bg-white border border-slate-200 rounded-full text-slate-600 hover:text-indigo-600 hover:border-indigo-600 transition-colors shadow-sm">🎧 Customer Service</Link>
+              <Link to="/jobs" className="px-4 py-1.5 bg-white border border-slate-200 rounded-full text-slate-600 hover:text-indigo-600 hover:border-indigo-600 transition-colors shadow-sm">🎨 Creative</Link>
             </div>
           </div>
         </section>
@@ -214,7 +215,7 @@ export default function Home() {
           <div className="max-w-6xl mx-auto">
             <div className="text-center mb-16">
               <div className="text-sm font-bold text-indigo-400 uppercase tracking-widest mb-3">Stories</div>
-              <h2 className="text-3xl md:text-4xl font-bold">Real people. Real results.</h2>
+              <p className="text-3xl md:text-4xl font-bold text-white">Real people. Real results.</p>
             </div>
             
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
@@ -266,15 +267,15 @@ export default function Home() {
         {/* ── CTA Banner ────────────────────────────────────────────────── */}
         <section className="py-24 px-4 bg-slate-50">
           <div className="max-w-4xl mx-auto bg-indigo-600 text-white rounded-[2.5rem] p-10 md:p-16 text-center shadow-xl shadow-indigo-200">
-            <h2 className="text-3xl md:text-4xl font-bold mb-4">Ready to find your next opportunity?</h2>
+            <p className="text-3xl md:text-4xl font-bold mb-4">Ready to find your next opportunity?</p>
             <p className="text-lg md:text-xl text-indigo-100">Join over 50,000 job seekers already using PartTimePro.</p>
             <div className="flex flex-col sm:flex-row justify-center gap-4 mt-10">
-              <a href="#" className="bg-white text-indigo-600 hover:bg-slate-50 transition-colors px-8 py-4 rounded-full font-bold text-lg">
+              <Link to="/jobs" className="bg-white text-indigo-600 hover:bg-slate-50 transition-colors px-8 py-4 rounded-full font-bold text-lg">
                 Browse All Jobs
-              </a>
-              <a href="#" className="border-2 border-indigo-300 hover:border-white transition-colors text-white px-8 py-4 rounded-full font-bold text-lg">
+              </Link>
+              <Link to="/profile" className="border-2 border-indigo-300 hover:border-white transition-colors text-white px-8 py-4 rounded-full font-bold text-lg">
                 Upload Your CV
-              </a>
+              </Link>
             </div>
           </div>
         </section>

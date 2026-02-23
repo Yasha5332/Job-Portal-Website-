@@ -32,7 +32,7 @@ const DEMO_JOBS = [
     _id: 'demo-3',
     title: "Weekend Barista",
     description: "Espresso machine experience preferred. Morning shifts available.",
-    category: "food",
+    category: "food-beverage",
     location: "Center City",
     salary_range: "$12/hr",
     working_hours: "Weekends",
@@ -70,17 +70,14 @@ const DEMO_JOBS = [
   }
 ];
 
-const CATEGORIES = [
-  { value: "retail", label: "Retail" },
-  { value: "food", label: "Food & Beverage" },
-  { value: "customer-service", label: "Customer Service" },
-  { value: "warehouse", label: "Warehouse" },
-  { value: "admin", label: "Administration" },
-  { value: "education", label: "Education" },
-  { value: "marketing", label: "Marketing" },
-  { value: "it", label: "IT & Tech" },
-  { value: "creative", label: "Creative" },
-];
+// ── Helper: Format category string to human readable label ────────────────────
+const formatCategoryLabel = (str) => {
+  if (!str) return 'Other';
+  return str
+    .split(/[-_/\s]+/)
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+    .join(' ');
+};
 
 export default function Jobs() {
   const navigate = useNavigate();
@@ -94,15 +91,19 @@ export default function Jobs() {
   const [loading, setLoading] = useState(true);
   const [fetchErr, setFetchErr] = useState('');
 
+  // ── Derived Categories ──────────────────────────────────────────────────────
+  const categories = useMemo(() => {
+    const uniqueVals = Array.from(new Set(allJobs.map(j => j.category).filter(Boolean))).sort();
+    return uniqueVals.map(val => ({
+      value: val,
+      label: formatCategoryLabel(val)
+    }));
+  }, [allJobs]);
+
   // ── Filter inputs ───────────────────────────────────────────────────────────
   const [keyword, setKeyword] = useState('');
   const [location, setLocation] = useState('');
   const [category, setCategory] = useState('');
-
-  // ── Committed filters ───────────────────────────────────────────────────────
-  const [activeKeyword, setActiveKeyword] = useState('');
-  const [activeLocation, setActiveLocation] = useState('');
-  const [activeCategory, setActiveCategory] = useState('');
 
   // ── Fetch jobs from backend — falls back to demo when empty ──────────────────
   const fetchJobs = useCallback(async () => {
@@ -176,43 +177,50 @@ export default function Jobs() {
   };
 
   // ── Filter helpers ───────────────────────────────────────────────────────────
-  const applyFilters = () => {
-    setActiveKeyword(keyword.trim().toLowerCase());
-    setActiveLocation(location.trim().toLowerCase());
-    setActiveCategory(category);
-  };
-
   const handleCategoryClick = (val) => {
-    const next = activeCategory === val ? '' : val;
-    setCategory(next);
-    setActiveCategory(next);
+    setCategory(prev => prev === val ? '' : val);
   };
 
   const clearFilters = () => {
-    setKeyword(''); setActiveKeyword('');
-    setLocation(''); setActiveLocation('');
-    setCategory(''); setActiveCategory('');
+    setKeyword('');
+    setLocation('');
+    setCategory('');
   };
 
   // ── Client-side filter on fetched data ──────────────────────────────────────
   const filteredJobs = useMemo(() => {
+    const k = keyword.trim().toLowerCase();
+    const l = location.trim().toLowerCase();
+
+    // Split search into words for more flexible matching (e.g., "developer web")
+    const searchTerms = k.split(/\s+/).filter(t => t.length > 0);
+
     return allJobs.filter(job => {
-      const matchesKeyword =
-        !activeKeyword ||
-        job.title?.toLowerCase().includes(activeKeyword) ||
-        job.description?.toLowerCase().includes(activeKeyword);
+      const title = String(job.title || '').toLowerCase();
+      const desc = String(job.description || '').toLowerCase();
+      const company = String(job.employer?.company_name || '').toLowerCase();
+      const catLabel = categories.find(c => c.value === job.category)?.label?.toLowerCase() || '';
 
-      const matchesLocation =
-        !activeLocation ||
-        job.location?.toLowerCase().includes(activeLocation);
+      // 1. Keyword Match (Job must contain ALL search words in at least one field)
+      const matchesKeyword = searchTerms.length === 0 || searchTerms.every(term =>
+        title.includes(term) ||
+        desc.includes(term) ||
+        company.includes(term) ||
+        catLabel.includes(term)
+      );
 
-      const matchesCategory = !activeCategory || job.category === activeCategory;
+      // 2. Location Match
+      const loc = String(job.location || '').toLowerCase();
+      const matchesLocation = !l || loc.includes(l);
+
+      // 3. Category Match (Strict value matching)
+      const matchesCategory = !category || job.category === category;
 
       return matchesKeyword && matchesLocation && matchesCategory;
     });
-  }, [allJobs, activeKeyword, activeLocation, activeCategory]);
+  }, [allJobs, keyword, location, category]);
 
-  const isFiltered = !!(activeKeyword || activeLocation || activeCategory);
+  const isFiltered = !!(keyword.trim() || location.trim() || category);
   const remoteCount = allJobs.filter(j => j.location?.toLowerCase().includes('remote')).length;
 
   return (
@@ -220,9 +228,9 @@ export default function Jobs() {
       <main className="max-w-[960px] mx-auto px-4 pt-12">
 
         {/* ── Search Bar ── */}
-        <section className="bg-white p-6 rounded-lg border border-slate-200 mb-10">
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-4">
-            <h2 className="text-xl font-semibold text-slate-800">Find your next part-time opportunity</h2>
+        <section className="bg-white p-6 rounded-lg border border-slate-200 mb-10 shadow-sm">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
+            <h2 className="text-xl font-bold text-slate-800">Find your next part-time opportunity</h2>
             {!loading && isDemo && (
               <div className="flex items-center gap-2 bg-amber-50 border border-amber-200 text-amber-800 px-4 py-1.5 rounded-full text-xs font-semibold">
                 <span>🎭 Demo Mode</span>
@@ -230,48 +238,50 @@ export default function Jobs() {
             )}
           </div>
           <div className="flex flex-wrap gap-4">
-            <input
-              type="text"
-              placeholder="Keywords (e.g., skills, job title)..."
-              className="flex-1 min-w-[200px] p-3 border border-slate-300 rounded-md focus:outline-none focus:border-indigo-500 text-base"
-              value={keyword}
-              onChange={e => setKeyword(e.target.value)}
-              onKeyDown={e => e.key === 'Enter' && applyFilters()}
-            />
-            <input
-              type="text"
-              placeholder="Location (e.g., Remote, Downtown)..."
-              className="flex-1 min-w-[200px] p-3 border border-slate-300 rounded-md focus:outline-none focus:border-indigo-500 text-base"
-              value={location}
-              onChange={e => setLocation(e.target.value)}
-              onKeyDown={e => e.key === 'Enter' && applyFilters()}
-            />
+            <div className="flex-1 min-w-[200px] relative">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">
+                <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
+              </svg>
+              <input
+                type="text"
+                placeholder="Keywords (e.g., React, TechCorp)..."
+                className="w-full pl-10 pr-3 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all text-base"
+                value={keyword}
+                onChange={e => setKeyword(e.target.value)}
+              />
+            </div>
+            <div className="flex-1 min-w-[200px] relative">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">
+                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" /><circle cx="12" cy="10" r="3" />
+              </svg>
+              <input
+                type="text"
+                placeholder="Location (e.g., Remote)..."
+                className="w-full pl-10 pr-3 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all text-base"
+                value={location}
+                onChange={e => setLocation(e.target.value)}
+              />
+            </div>
             <select
-              className="flex-1 min-w-[200px] p-3 border border-slate-300 rounded-md focus:outline-none focus:border-indigo-500 text-base bg-white"
+              className="flex-1 min-w-[180px] p-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all text-base bg-white cursor-pointer"
               value={category}
               onChange={e => setCategory(e.target.value)}
             >
               <option value="">All Categories</option>
-              {CATEGORIES.map(c => (
+              {categories.map(c => (
                 <option key={c.value} value={c.value}>{c.label}</option>
               ))}
             </select>
-            <button
-              onClick={applyFilters}
-              className="bg-indigo-600 hover:bg-indigo-700 text-white font-medium px-6 py-3 rounded-md transition-colors"
-            >
-              Search
-            </button>
           </div>
 
           {/* Active filter pills */}
           {isFiltered && (
-            <div className="flex flex-wrap items-center gap-2 mt-4">
-              <span className="text-xs text-slate-500 font-medium">Active filters:</span>
-              {activeKeyword && <FilterPill label={`"${activeKeyword}"`} onRemove={() => { setKeyword(''); setActiveKeyword(''); }} />}
-              {activeLocation && <FilterPill label={`📍 ${activeLocation}`} onRemove={() => { setLocation(''); setActiveLocation(''); }} />}
-              {activeCategory && <FilterPill label={CATEGORIES.find(c => c.value === activeCategory)?.label} onRemove={() => { setCategory(''); setActiveCategory(''); }} />}
-              <button onClick={clearFilters} className="text-xs text-red-500 hover:text-red-700 font-medium ml-1">
+            <div className="flex flex-wrap items-center gap-2 mt-5 pt-5 border-t border-slate-100">
+              <span className="text-xs text-slate-400 font-bold uppercase tracking-wider">Active Filters</span>
+              {keyword.trim() && <FilterPill label={`"${keyword}"`} onRemove={() => setKeyword('')} />}
+              {location.trim() && <FilterPill label={`📍 ${location}`} onRemove={() => setLocation('')} />}
+              {category && <FilterPill label={categories.find(c => c.value === category)?.label} onRemove={() => setCategory('')} />}
+              <button onClick={clearFilters} className="text-xs text-indigo-600 hover:text-indigo-800 font-bold ml-1 transition-colors">
                 Clear all
               </button>
             </div>
@@ -292,25 +302,28 @@ export default function Jobs() {
                   <line x1="8" y1="18" x2="21" y2="18" /><line x1="3" y1="6" x2="3.01" y2="6" />
                   <line x1="3" y1="12" x2="3.01" y2="12" /><line x1="3" y1="18" x2="3.01" y2="18" />
                 </svg>
-                Browse by Category
+                Browse Categorized
               </h4>
               <div className="flex flex-col gap-1 text-sm">
-                {CATEGORIES.map(c => {
+                {categories.map(c => {
                   const count = allJobs.filter(j => j.category === c.value).length;
                   return (
                     <button
                       key={c.value}
                       onClick={() => handleCategoryClick(c.value)}
-                      className={`text-left px-2 py-1.5 rounded-md transition-colors ${activeCategory === c.value
-                        ? 'bg-indigo-50 text-indigo-700 font-semibold'
+                      className={`text-left px-2 py-1.5 rounded-md transition-all ${category === c.value
+                        ? 'bg-indigo-600 text-white font-bold shadow-md shadow-indigo-100'
                         : 'text-slate-600 hover:text-indigo-600 hover:bg-slate-50'
                         }`}
                     >
                       {c.label}
-                      <span className="ml-1 text-xs text-slate-400">({count})</span>
+                      <span className={`ml-1 text-[10px] font-bold ${category === c.value ? 'text-indigo-200' : 'text-slate-400'}`}>({count})</span>
                     </button>
                   );
                 })}
+                {categories.length === 0 && (
+                  <p className="text-slate-400 italic px-2 py-4">No categories available</p>
+                )}
               </div>
             </div>
 
@@ -426,7 +439,7 @@ export default function Jobs() {
                           </span>
                         )}
                         <span className="text-[11px] text-slate-400 font-medium">
-                          {CATEGORIES.find(c => c.value === job.category)?.label || job.category}
+                          {categories.find(c => c.value === job.category)?.label || formatCategoryLabel(job.category)}
                         </span>
                       </div>
                     </div>
@@ -442,10 +455,10 @@ export default function Jobs() {
                         onClick={() => handleApplyDirect(job._id)}
                         disabled={appliedJobIds.has(job._id) || applyingId === job._id || isDemo}
                         className={`font-medium px-5 py-2 rounded-md transition-colors flex items-center gap-2 ${appliedJobIds.has(job._id)
-                            ? 'bg-emerald-100 text-emerald-700 cursor-default'
-                            : applyingId === job._id
-                              ? 'bg-indigo-400 text-white cursor-wait'
-                              : 'bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm'
+                          ? 'bg-emerald-100 text-emerald-700 cursor-default'
+                          : applyingId === job._id
+                            ? 'bg-indigo-400 text-white cursor-wait'
+                            : 'bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm'
                           }`}
                       >
                         {applyingId === job._id && (

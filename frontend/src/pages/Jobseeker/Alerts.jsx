@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import { useAuth } from '../../context/AuthContext';
+import { useNotifications } from '../../context/NotificationContext';
 
 const API_BASE = 'http://localhost:5000';
 
@@ -88,12 +89,14 @@ function timeAgo(dateStr) {
 
 export default function Alerts() {
   const { token } = useAuth();
+  const { refreshUnreadCount } = useNotifications();
 
   const [alerts, setAlerts] = useState([]);
   const [isDemo, setIsDemo] = useState(false);
   const [loading, setLoading] = useState(true);
   const [fetchErr, setFetchErr] = useState('');
   const [activeTab, setActiveTab] = useState('all');
+  const [selectedAlert, setSelectedAlert] = useState(null);
 
   const authHeaders = { headers: { Authorization: `Bearer ${token}` } };
 
@@ -123,11 +126,24 @@ export default function Alerts() {
 
   // ── Mark one as read ─────────────────────────────────────────────────────────
   const handleCardClick = async (id) => {
+    const target = alerts.find(a => a._id === id);
+    if (!target || target.is_read) return;
+
     setAlerts(prev => prev.map(a => a._id === id ? { ...a, is_read: true } : a));
     if (isDemo) return;
     try {
       await axios.patch(`${API_BASE}/api/notifications/${id}/read`, {}, authHeaders);
+      refreshUnreadCount();
     } catch { /* optimistic update stays */ }
+  };
+
+  // ── View Details ──────────────────────────────────────────────────────────────
+  const handleViewDetails = (e, alert) => {
+    e.stopPropagation();
+    setSelectedAlert(alert);
+    if (!alert.is_read) {
+      handleCardClick(alert._id);
+    }
   };
 
   // ── Mark all as read ─────────────────────────────────────────────────────────
@@ -136,16 +152,20 @@ export default function Alerts() {
     if (isDemo) return;
     try {
       await axios.patch(`${API_BASE}/api/notifications/read-all`, {}, authHeaders);
+      refreshUnreadCount();
     } catch { /* optimistic update stays */ }
   };
 
   // ── Dismiss ──────────────────────────────────────────────────────────────────
   const handleDismiss = async (e, id) => {
     e.stopPropagation();
+    const target = alerts.find(a => a._id === id);
     setAlerts(prev => prev.filter(a => a._id !== id));
+    if (selectedAlert?._id === id) setSelectedAlert(null);
     if (isDemo) return;
     try {
       await axios.delete(`${API_BASE}/api/notifications/${id}`, authHeaders);
+      if (target && !target.is_read) refreshUnreadCount();
     } catch { /* already removed from UI */ }
   };
 
@@ -160,7 +180,7 @@ export default function Alerts() {
   });
 
   return (
-    <div className="min-h-screen bg-slate-50 font-sans text-slate-900 pb-20">
+    <div className="min-h-screen bg-slate-50 font-sans text-slate-900 pb-20 relative">
       <main className="max-w-3xl mx-auto px-4 pt-10">
 
         {/* Page Header */}
@@ -256,7 +276,7 @@ export default function Alerts() {
 
                   {/* Content */}
                   <div className="flex-1 min-w-0">
-                    <p className="text-[15px] leading-relaxed text-slate-700 mb-3 pr-6">
+                    <p className="text-[15px] leading-relaxed text-slate-700 mb-3 pr-6 text-ellipsis overflow-hidden line-clamp-2">
                       {alert.title && <strong>{alert.title}: </strong>}
                       <span dangerouslySetInnerHTML={{ __html: alert.message }} />
                     </p>
@@ -272,12 +292,18 @@ export default function Alerts() {
 
                       <div className="flex gap-2">
                         {alert.type === 'jobs' && (
-                          <button className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold rounded-lg transition-colors">
+                          <button
+                            onClick={(e) => handleViewDetails(e, alert)}
+                            className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold rounded-lg transition-colors"
+                          >
                             View Job
                           </button>
                         )}
                         {alert.type === 'status' && (
-                          <button className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold rounded-lg transition-colors">
+                          <button
+                            onClick={(e) => handleViewDetails(e, alert)}
+                            className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold rounded-lg transition-colors"
+                          >
                             View Details
                           </button>
                         )}
@@ -308,6 +334,78 @@ export default function Alerts() {
           </div>
         )}
       </main>
+
+      {/* ── Notification Detail Modal ── */}
+      {selectedAlert && (
+        <div className="fixed inset-0 z-100 flex items-center justify-center p-4">
+          {/* Backdrop */}
+          <div
+            className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm transition-opacity"
+            onClick={() => setSelectedAlert(null)}
+          />
+
+          {/* Modal Content */}
+          <div className="relative w-full max-w-lg bg-white rounded-3xl shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-300">
+            <div className="p-1 px-6 pt-6 flex justify-between items-center bg-white border-b border-slate-50">
+              <span className={`px-3 py-1 rounded-lg text-[11px] font-bold uppercase tracking-wider ${TYPE_CONFIG[selectedAlert.type]?.iconBg} ${TYPE_CONFIG[selectedAlert.type]?.iconColor}`}>
+                {selectedAlert.type}
+              </span>
+              <button
+                onClick={() => setSelectedAlert(null)}
+                className="p-1.5 hover:bg-slate-100 rounded-full transition-colors text-slate-400 hover:text-slate-600"
+              >
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                  <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
+                </svg>
+              </button>
+            </div>
+
+            <div className="p-8">
+              <div className={`w-14 h-14 flex items-center justify-center rounded-2xl mb-6 ${TYPE_CONFIG[selectedAlert.type]?.iconBg} ${TYPE_CONFIG[selectedAlert.type]?.iconColor}`}>
+                {React.cloneElement(TYPE_CONFIG[selectedAlert.type]?.icon || <div />, { width: 28, height: 28 })}
+              </div>
+
+              <h2 className="text-2xl font-extrabold text-slate-900 mb-4 leading-tight">
+                {selectedAlert.title || 'Notification'}
+              </h2>
+
+              <div
+                className="text-slate-600 text-lg leading-relaxed mb-8"
+                dangerouslySetInnerHTML={{ __html: selectedAlert.message }}
+              />
+
+              <div className="flex items-center gap-2 text-sm font-medium text-slate-400 mb-8 pb-8 border-b border-slate-100">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <circle cx="12" cy="12" r="10" />
+                  <polyline points="12 6 12 12 16 14" />
+                </svg>
+                {new Date(selectedAlert.createdAt).toLocaleString(undefined, {
+                  month: 'long',
+                  day: 'numeric',
+                  year: 'numeric',
+                  hour: '2-digit',
+                  minute: '2-digit'
+                })}
+              </div>
+
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setSelectedAlert(null)}
+                  className="flex-1 py-3.5 bg-slate-900 hover:bg-slate-800 text-white font-bold rounded-xl transition-all shadow-lg shadow-slate-200 active:scale-95"
+                >
+                  Close
+                </button>
+                <button
+                  onClick={(e) => handleDismiss(e, selectedAlert._id)}
+                  className="px-6 py-3.5 bg-white border border-slate-200 hover:border-red-200 hover:bg-red-50 text-slate-600 hover:text-red-600 font-bold rounded-xl transition-all active:scale-95"
+                >
+                  Dismiss
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
