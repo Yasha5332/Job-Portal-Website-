@@ -3,6 +3,7 @@ const JobSeeker = require('../models/JobSeeker');
 const Employer = require('../models/Employer');
 const Job = require('../models/Job');
 const ActivityLog = require('../models/ActivityLog');
+const Application = require('../models/Application');
 
 /**
  * Get all job seekers with their user data
@@ -38,13 +39,28 @@ exports.deleteUser = async (req, res) => {
         if (!user) return res.status(404).json({ message: 'User not found' });
 
         if (user.role === 'job_seeker') {
-            await JobSeeker.findOneAndDelete({ user: id });
+            const seeker = await JobSeeker.findOne({ user: id });
+            if (seeker) {
+                // Delete all applications for this seeker
+                await Application.deleteMany({ seeker: seeker._id });
+                await JobSeeker.findByIdAndDelete(seeker._id);
+            }
         } else if (user.role === 'employer') {
-            await Employer.findOneAndDelete({ user: id });
+            const employer = await Employer.findOne({ user: id });
+            if (employer) {
+                // Find all jobs by this employer
+                const jobs = await Job.find({ employer: employer._id });
+                const jobIds = jobs.map(j => j._id);
+                // Delete all applications for those jobs
+                await Application.deleteMany({ job: { $in: jobIds } });
+                // Delete all jobs
+                await Job.deleteMany({ employer: employer._id });
+                await Employer.findByIdAndDelete(employer._id);
+            }
         }
 
         await User.findByIdAndDelete(id);
-        res.status(200).json({ message: 'User and profile deleted successfully' });
+        res.status(200).json({ message: 'User and all associated data deleted successfully' });
     } catch (error) {
         res.status(500).json({ message: 'Error deleting user', error: error.message });
     }
@@ -143,7 +159,11 @@ exports.deleteJob = async (req, res) => {
         const { id } = req.params;
         const deletedJob = await Job.findByIdAndDelete(id);
         if (!deletedJob) return res.status(404).json({ message: 'Job not found' });
-        res.status(200).json({ message: 'Job posting removed by administrator' });
+
+        // Clean up applications associated with this job
+        await Application.deleteMany({ job: id });
+
+        res.status(200).json({ message: 'Job posting and associated applications removed by administrator' });
     } catch (error) {
         res.status(500).json({ message: 'Error deleting job', error: error.message });
     }

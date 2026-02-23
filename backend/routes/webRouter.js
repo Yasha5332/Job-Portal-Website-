@@ -4,7 +4,7 @@ const { updateJobSeekerProfile } = require('../controllers/profileController');
 const { getAllJobs, getJobById, createJob, getMyJobs, deleteJob, updateJob } = require('../controllers/jobController');
 const { getNotifications, markRead, markAllRead, dismissNotification, manualCreate, getUnreadCount } = require('../controllers/notificationController');
 const { getMyApplications, applyForJob, withdrawApplication, updateStatus, getEmployerApplications } = require('../controllers/applicationController');
-const { getAllJobSeekers, getAllEmployers, deleteUser, getStats, approveAllPendingJobs, getRecentActivity, generateReport } = require('../controllers/adminController');
+const { getAllJobSeekers, getAllEmployers, deleteUser, getStats, approveAllPendingJobs, getRecentActivity, generateReport, deleteJob: adminDeleteJob } = require('../controllers/adminController');
 const authMiddleware = require('../middleware/authMiddleware');
 const adminMiddleware = require('../middleware/adminMiddleware');
 
@@ -50,7 +50,7 @@ router.get("/api/employer/applications", authMiddleware, getEmployerApplications
 router.get("/api/admin/jobseekers", authMiddleware, adminMiddleware, getAllJobSeekers);
 router.get("/api/admin/employers", authMiddleware, adminMiddleware, getAllEmployers);
 router.delete("/api/admin/users/:id", authMiddleware, adminMiddleware, deleteUser);
-router.delete("/api/admin/jobs/:id", authMiddleware, adminMiddleware, deleteJob);
+router.delete("/api/admin/jobs/:id", authMiddleware, adminMiddleware, adminDeleteJob);
 router.patch("/api/admin/jobs/approve-all", authMiddleware, adminMiddleware, approveAllPendingJobs);
 router.get("/api/admin/activity", authMiddleware, adminMiddleware, getRecentActivity);
 router.get("/api/admin/report", authMiddleware, adminMiddleware, generateReport);
